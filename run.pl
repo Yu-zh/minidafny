@@ -51,7 +51,7 @@ sub compile()
     my @src_filelist = glob "$PROJ_INFO{'SRC_DIR'}/*.scala";
     foreach my $src_file (@src_filelist)
     {
-        say "[info] src file $src_file";
+        say "[info] found src file $src_file";
     }
     return !(system "scalac -d $PROJ_INFO{'RESULT_DIR'} @src_filelist");
 }
@@ -60,7 +60,7 @@ sub run()
     foreach my $test_name (keys %TEST_QUEUE)
     {
         print "[info] running $test_name ... ";
-        `scala -cp $PROJ_INFO{'RESULT_DIR'} VCGen $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
+        `scala -cp $PROJ_INFO{'RESULT_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
         print "ok\n";
     }
 }
@@ -71,7 +71,7 @@ sub init_check()
     $PROJ_INFO{'SRC_DIR'}          = "$PROJ_INFO{'PROJ_DIR'}/Src";
     $PROJ_INFO{'BENCH_DIR'}        = "$PROJ_INFO{'PROJ_DIR'}/Benchmarks";
     $PROJ_INFO{'RESULT_DIR'}       = "$PROJ_INFO{'PROJ_DIR'}/_Results";
-    $PROJ_INFO{'BIN'}              = "$PROJ_INFO{'RESULT_DIR'}/minidafny";
+    $PROJ_INFO{'BIN'}              = "VCGen";
 
     foreach my $path (keys %PROJ_INFO)
     {
@@ -87,13 +87,13 @@ sub init_check()
     my @bench_filelist = glob "$PROJ_INFO{'BENCH_DIR'}/*/*.imp";
     foreach my $file (@bench_filelist)
     {
-        if($file =~ /\/(?<name>.+).imp$/)
+        if($file =~ /\/.+\/(?<name>.+)\.imp$/)
         {
             my $name      = $+{name};
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
-            say "[info] benchmark file $BENCH_INFO{$name}{'path'} " . ($validness ? "valid" : "invalid");
+            say "[info] found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid");
         }
     }   
 }
