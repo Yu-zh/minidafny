@@ -112,6 +112,6 @@ sub mkdir_die
 {
     my $dirpath = @_;
     
-    mkdir dirpath if !-e dirpath;
-    die "[error] unable to create dir at dirpath" if !-e dirpath;
+    mkdir $dirpath if !-e $dirpath;
+    die "[error] unable to create dir at $dirpath" if !-e $dirpath;
 }
