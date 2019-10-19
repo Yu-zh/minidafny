@@ -9,6 +9,7 @@ use Cwd 'abs_path';
 use threads;
 
 our %PROJ_INFO;
+our %BENCH_INFO;
 our %TEST_QUEUE;
 
 &init_check();
@@ -29,7 +30,20 @@ sub cmd_parse()
 {
     foreach my $current_arg (@ARGV)
     {
-
+        if($current_arg eq '-clean')
+        {
+            say "[info] cleaning $PROJ_INFO{'RESULT_DIR'} ...";
+            `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
+        }
+        elsif($current_arg eq '-all')
+        {
+            foreach my $test_name (keys %BENCH_INFO)
+            {
+                $TEST_QUEUE{$test_name}{'path'}   = $BENCH_INFO{$test_name}{'path'};
+                $TEST_QUEUE{$test_name}{'valid'}  = $BENCH_INFO{$test_name}{'valid'};
+                $TEST_QUEUE{$test_name}{'result'} = 'pending';
+            }
+        }
     }
 }
 sub compile()
@@ -43,7 +57,12 @@ sub compile()
 }
 sub run()
 {
-    say "run";
+    foreach my $test_name (keys %TEST_QUEUE)
+    {
+        print "[info] running $test_name ... ";
+        `scala -cp $PROJ_INFO{'RESULT_DIR'} VCGen $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
+        print "ok\n";
+    }
 }
 
 sub init_check()
@@ -64,6 +83,19 @@ sub init_check()
             die "[error] Wrong path for $path at $PROJ_INFO{$path}" if !-e $PROJ_INFO{$path};
         }
     }
+
+    my @bench_filelist = glob "$PROJ_INFO{'BENCH_DIR'}/*/*.imp";
+    foreach my $file (@bench_filelist)
+    {
+        if($file =~ /\/(?<name>.+).imp$/)
+        {
+            my $name      = $+{name};
+            my $validness = !($file =~ 'invalid') ? 1 : 0;
+            $BENCH_INFO{$name}{'path'}  = $file;
+            $BENCH_INFO{$name}{'valid'} = $validness;
+            say "[info] benchmark file $BENCH_INFO{$name}{'path'} " . ($validness ? "valid" : "invalid");
+        }
+    }   
 }
 
 sub get_script_path
