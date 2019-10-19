@@ -34,6 +34,9 @@ sub cmd_parse()
         {
             say "[info] cleaning $PROJ_INFO{'RESULT_DIR'} ...";
             `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
+
+            say "[info] cleaning $PROJ_INFO{'OBJ_DIR'} ...";
+            `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
         }
         elsif($current_arg eq '-all')
         {
@@ -53,14 +56,14 @@ sub compile()
     {
         say "[info] found src file $src_file";
     }
-    return !(system "scalac -d $PROJ_INFO{'RESULT_DIR'} @src_filelist");
+    return !(system "scalac -d $PROJ_INFO{'OBJ_DIR'} @src_filelist");
 }
 sub run()
 {
     foreach my $test_name (keys %TEST_QUEUE)
     {
         print "[info] running $test_name ... ";
-        `scala -cp $PROJ_INFO{'RESULT_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
+        `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
         print "ok\n";
     }
 }
@@ -70,6 +73,7 @@ sub init_check()
     $PROJ_INFO{'PROJ_DIR'}         = &get_script_path();
     $PROJ_INFO{'SRC_DIR'}          = "$PROJ_INFO{'PROJ_DIR'}/Src";
     $PROJ_INFO{'BENCH_DIR'}        = "$PROJ_INFO{'PROJ_DIR'}/Benchmarks";
+    $PROJ_INFO{'OBJ_DIR'}          = "$PROJ_INFO{'PROJ_DIR'}/_Objs";
     $PROJ_INFO{'RESULT_DIR'}       = "$PROJ_INFO{'PROJ_DIR'}/_Results";
     $PROJ_INFO{'BIN'}              = "VCGen";
 
@@ -77,8 +81,8 @@ sub init_check()
     {
         if($path =~ 'DIR')
         {
-            mkdir $PROJ_INFO{'RESULT_DIR'} if !-e $PROJ_INFO{'RESULT_DIR'};
-            die "[error] unable to create dir at $PROJ_INFO{'RESULT_DIR'}" if !-e $PROJ_INFO{'RESULT_DIR'};
+            &mkdir_die($PROJ_INFO{'RESULT_DIR'});
+            &mkdir_die($PROJ_INFO{'OBJ_DIR'});
 
             die "[error] Wrong path for $path at $PROJ_INFO{$path}" if !-e $PROJ_INFO{$path};
         }
@@ -102,4 +106,12 @@ sub get_script_path
 {
     (my $final_path = $+{path}) =~ s/\/$// if(abs_path($0) =~ /(?<path>\/.+\/)/);
     return $final_path;
+}
+
+sub mkdir_die
+{
+    my $dirpath = @_;
+    
+    mkdir dirpath if !-e dirpath;
+    die "[error] unable to create dir at dirpath" if !-e dirpath;
 }
