@@ -27,15 +27,23 @@ if($compilation_success)
 
 sub cmd_parse()
 {
+    foreach my $current_arg (@ARGV)
+    {
 
+    }
 }
 sub compile()
 {
-    return 1;
+    my @src_filelist = glob "$PROJ_INFO{'SRC_DIR'}/*.scala";
+    foreach my $src_file (@src_filelist)
+    {
+        say "[info] src file $src_file";
+    }
+    return !(system "scalac -d $PROJ_INFO{'RESULT_DIR'} @src_filelist");
 }
 sub run()
 {
-
+    say "run";
 }
 
 sub init_check()
