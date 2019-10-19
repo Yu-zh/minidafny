@@ -110,7 +110,7 @@ sub get_script_path
 
 sub mkdir_die
 {
-    my $dirpath = @_;
+    (my $dirpath) = @_;
     
     mkdir $dirpath if !-e $dirpath;
     die "[error] unable to create dir at $dirpath" if !-e $dirpath;
