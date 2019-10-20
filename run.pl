@@ -148,6 +148,10 @@ sub report()
             {
                 &info_print(0, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
             }
+            elsif($result =~ 'No such file or directory')
+            {
+                die "[error] please provide full absolute path to z3 in \$PATH";
+            }
             else
             {
                 &info_print(1, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
