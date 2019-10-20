@@ -13,7 +13,6 @@ our %BENCH_INFO;
 our %TEST_QUEUE;
 our $INFO_LEVEL = 0;
 
-&init_check();
 &cmd_parse();
 my $compilation_success = &compile();
 if($compilation_success)
@@ -57,10 +56,7 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
-            
-            say "found benchmark $file";
-            &info_print(5, "found src file $src_file");
-            &info_print(3, "found benchmark");
+
             &info_print(5, "found benchmark file $file, type is $validness");
         }
     }
@@ -69,15 +65,12 @@ sub init_check()
 
 sub cmd_parse()
 {
+    my $need_clean = 0;
     foreach my $current_arg (@ARGV)
     {
         if($current_arg eq '-clean')
         {
-            &info_print(5, "cleaning $PROJ_INFO{'RESULT_DIR'} ...");
-            `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
-
-            &info_print(5, "cleaning $PROJ_INFO{'OBJ_DIR'} ...");
-            `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
+            $need_clean = 1;
         }
         elsif($current_arg =~ /-info=(?<level>\d)/)
         {
@@ -91,6 +84,25 @@ sub cmd_parse()
                 $TEST_QUEUE{$test_name}{'valid'}  = $BENCH_INFO{$test_name}{'valid'};
             }
         }
+        elsif($current_arg =~ /.*\/?(?<name>.+)\.imp$/)
+        {
+            $TEST_QUEUE{$+{name}}{'path'}   = $current_arg;
+            $TEST_QUEUE{$+{name}}{'valid'}  = 1;
+        }
+        else
+        {
+            die "unregconized parameter $current_arg";
+        }
+    }
+
+    &init_check();
+    if($need_clean)
+    {
+        &info_print(5, "cleaning $PROJ_INFO{'RESULT_DIR'} ...");
+        `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
+
+        &info_print(5, "cleaning $PROJ_INFO{'OBJ_DIR'} ...");
+        `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
     }
 }
 
@@ -124,11 +136,11 @@ sub report()
         if(-e $vc_to_test)
         {
             my $result = `z3 -smt2 $vc_to_test`;
-            if($result =~ /^unsat/ && $TEST_QUEUE{$test_name}{'valid'})
+            if($result =~ /^unsat/)
             {
                 &info_print(0, ("Verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
             }
-            elsif($result =~ /^sat/ && !($TEST_QUEUE{$test_name}{'valid'}))
+            elsif($result =~ /^sat/)
             {
                 &info_print(0, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
             }
