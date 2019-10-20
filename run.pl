@@ -57,10 +57,11 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
+            say "found benchmark file $file, type is $validness";
             &info_print(5, "found benchmark file $file, type is $validness");
         }
     }
-    &info_print(0, "\n") if($INFO_LEVEL != 0);
+    &info_print(0, '') if($INFO_LEVEL != 0);
 }
 
 sub cmd_parse()
@@ -97,7 +98,7 @@ sub compile()
     {
         &info_print(5, "found src file $src_file");
     }
-    &info_print(0, "\n") if($INFO_LEVEL != 0);
+    &info_print(0, '') if($INFO_LEVEL != 0);
     return !(system "scalac -d $PROJ_INFO{'OBJ_DIR'} @src_filelist");
 }
 sub run()
@@ -107,7 +108,7 @@ sub run()
         &info_print(5, "running $test_name ... ");
         `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
     }
-    &info_print(0, "\n") if($INFO_LEVEL != 0);
+    &info_print(0, '') if($INFO_LEVEL != 0);
 }
 
 sub report()
@@ -130,7 +131,6 @@ sub report()
             }
             else
             {
-                &info_print(5, "result = $result");
                 &info_print(1, "Not verified");
             }
         }
