@@ -667,7 +667,7 @@ object VCGen {
       case Add(left, right) => "(+ " + arithToSMT(left) + " " + arithToSMT(right) + ")"
       case Sub(left, right) => "(- " + arithToSMT(left) + " " + arithToSMT(right) + ")"
       case Mul(left, right) => "(* " + arithToSMT(left) + " " + arithToSMT(right) + ")"
-      case Div(left, right) => "(/ " + arithToSMT(left) + " " + arithToSMT(right) + ")"
+      case Div(left, right) => "(div " + arithToSMT(left) + " " + arithToSMT(right) + ")"
       case Mod(left, right) => "(mod " + arithToSMT(left) + " " + arithToSMT(right) + ")"
       case Parens(a) => arithToSMT(a)
       case Read(arr, ind) => "(select " + arrToSMT(arr) + " " + arithToSMT(ind) + ")"
