@@ -170,29 +170,29 @@ sub info_print
         my $prefix = '';
         if($level == 5)
         {
-            $prefix = '[INFO]';
+            $prefix = '[INFO] ';
         }
         elsif($level == 4)
         {
-            $prefix = '[INFO]';
+            $prefix = '[INFO] ';
         }
         elsif($level == 3)
         {
-            $prefix = '[WARNING]';
+            $prefix = '[WARNING] ';
         }
         elsif($level == 2)
         {
-            $prefix = '[CRITICAL]';
+            $prefix = '[CRITICAL] ';
         }
         elsif($level == 1)
         {
-            $prefix = '[BUG]';
+            $prefix = '[BUG] ';
         }
         elsif($level == 0)
         {
             $prefix = '';
         }
 
-        say "$prefix $string";
+        say "${prefix}${string}";
     }
 }
