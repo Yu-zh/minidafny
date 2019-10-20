@@ -57,6 +57,7 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
+            
             &info_print(3, "found benchmark");
             &info_print(5, "found benchmark file $file, type is $validness");
         }
@@ -148,13 +149,13 @@ sub report()
 ####################################################################################################
 
 
-sub get_script_path
+sub get_script_path()
 {
     (my $final_path = $+{path}) =~ s/\/$// if(abs_path($0) =~ /(?<path>\/.+\/)/);
     return $final_path;
 }
 
-sub mkdir_die
+sub mkdir_die()
 {
     (my $dirpath) = @_;
 
@@ -162,10 +163,10 @@ sub mkdir_die
     die "[error] unable to create dir at $dirpath" if !-e $dirpath;
 }
 
-sub info_print
+sub info_print()
 {
     my ($level, $string) = @_;
-    if($level <= $INFO_LEVEL)
+    if($INFO_LEVEL >= $level)
     {
         my $prefix = '';
         if($level == 5)
