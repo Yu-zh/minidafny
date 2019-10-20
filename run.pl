@@ -106,7 +106,7 @@ sub cmd_parse()
 
     foreach my $test_name (keys %BENCH_INFO)
     {
-        &info_print(5, "found benchmark $test_name at location BENCH_INFO{$test_name}{'path'}");
+        &info_print(5, "found benchmark $test_name at location $BENCH_INFO{$test_name}{'path'}");
     }
 }
 
