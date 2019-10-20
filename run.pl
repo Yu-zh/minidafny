@@ -140,6 +140,11 @@ sub report()
         if(-e $vc_to_test)
         {
             my $result = `z3 -smt2 $vc_to_test`;
+            if($! =~ 'No such file or directory')
+            {
+                die "[error] please provide full absolute path to z3 in \$PATH";
+            }
+
             if($result =~ /^unsat/)
             {
                 &info_print(0, ("Verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
@@ -147,10 +152,6 @@ sub report()
             elsif($result =~ /^sat/)
             {
                 &info_print(0, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
-            }
-            elsif($result =~ 'No such file or directory')
-            {
-                die "[error] please provide full absolute path to z3 in \$PATH";
             }
             else
             {
