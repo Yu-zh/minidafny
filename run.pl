@@ -59,7 +59,7 @@ sub init_check()
             $BENCH_INFO{$name}{'valid'} = $validness;
             
             say "found benchmark $file";
-            &info_print(5, "cleaning $PROJ_INFO{'RESULT_DIR'} ...");
+            &info_print(5, "found src file $src_file");
             &info_print(3, "found benchmark");
             &info_print(5, "found benchmark file $file, type is $validness");
         }
