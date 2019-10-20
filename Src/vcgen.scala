@@ -21,6 +21,7 @@ object VCGen {
   case class Div(left: ArithExp, right: ArithExp) extends ArithExp
   case class Mod(left: ArithExp, right: ArithExp) extends ArithExp
   case class Parens(a: ArithExp) extends ArithExp
+  // because I want my read to be able to read from a modified array
   case class Read(arr: Arr, ind: ArithExp) extends ArithExp
 
   /* Comparisons of arithmetic expressions. */
@@ -47,6 +48,7 @@ object VCGen {
   case class If(cond: BoolExp, th: Block, el: Block) extends Statement
   case class While(cond: BoolExp, body: Block) extends Statement
   case class WhileInv(cond: BoolExp, body: Block, inv: List[Assertion]) extends Statement
+  case class ParWrite(x1: String, ind1: ArithExp, x2: String, ind2: ArithExp, value1: ArithExp, value2: ArithExp) extends Statement
 
   trait Assertion
   case class ACmp(cmp: Comparison) extends Assertion
@@ -128,6 +130,9 @@ object VCGen {
       (pvar <~ ",") ~ (pvar <~ ":=") ~ (aexp <~ ",") ~ (aexp <~ ";") ^^ {
         case v1 ~ v2 ~ e1 ~ e2 => ParAssign(v1, v2, e1, e2)
       } |
+      pvar ~ ("[" ~> aexp <~ "]") ~ ("," ~> pvar) ~ ("[" ~> aexp <~ "]") ~ (":=" ~> aexp) ~ ("," ~> aexp <~ ";") ^^ {
+        case a1 ~ i1 ~ a2 ~ i2 ~ v1 ~ v2 => ParWrite(a1, i1, a2, i2, v1, v2)
+      } |
       ("if" ~> bexp <~ "then") ~ (block <~ "else") ~ (block <~ "end") ^^ {
         case c ~ t ~ e => If(c, t, e)
       } |
@@ -152,7 +157,7 @@ object VCGen {
           if (xs.isEmpty) {
             a
           } else {
-            def idsAssn = getIdsAssn(a)
+            def idsAssn = Helpers.getIdsAssn(a)
             def idsForall = xs.map({
               id => if (idsAssn.contains(IntId(id))) {
                 IntId(id)
@@ -171,7 +176,7 @@ object VCGen {
           if (xs.isEmpty) {
             a
           } else {
-            def idsAssn = getIdsAssn(a)
+            def idsAssn = Helpers.getIdsAssn(a)
             def idsForall = xs.map({
               id => if (idsAssn.contains(IntId(id))) {
                 IntId(id)
@@ -210,6 +215,9 @@ object VCGen {
 
     def prog : Parser[HoareProgram] =
       ("program" ~> pvar) ~ rep("pre" ~> assn) ~ rep("post" ~> assn) ~ ("is" ~> block <~ "end") ^^ { case x ~ pres ~ posts ~ b => (x, pres, posts, b) }
+  }
+
+  object PrettyPrinter {
 
     /* pretty-print a program */
     def progPrint(prog: HoareProgram): Unit = prog match {
@@ -238,7 +246,7 @@ object VCGen {
         assnPrint(a)
       }
       case AAnd(left, right) => {
-        if (isApply(left)) {
+        if (Helpers.isApply(left)) {
           print("(")
           assnPrint(left)
           print(")")
@@ -246,7 +254,7 @@ object VCGen {
           assnPrint(left)
         }
         print(" && ")
-        if (isApply(right)) {
+        if (Helpers.isApply(right)) {
           print("(")
           assnPrint(right)
           print(")")
@@ -359,8 +367,11 @@ object VCGen {
         print("]")
       }
     }
-    def atrue: Assertion = ATrue()
+  }
 
+  def atrue: Assertion = ATrue()
+
+  object VCGenerator {
     /* calculate the weakest condition */
     def preCond(program: Block, assn: Assertion): Assertion = program match {
       case Nil => assn
@@ -368,6 +379,13 @@ object VCGen {
         case Assign(x, e) => substAssn(x, e)(assn)
         case ParAssign(x1, x2, e1, e2) => substAssnPar(x1, x2, e1, e2)(assn)
         case Write(arr, ind, v) => substAssnArr(arr, Warr(Varr(arr), ind, v))(assn)
+        case ParWrite(arr1, ind1, arr2, ind2, v1, v2) => {
+          if (arr1 == arr2) {
+            substAssnArr(arr1, Warr(Warr((Varr(arr1)), ind1, v1), ind2, v2))(assn)
+          } else {
+            substAssnArrPar(arr1, Warr(Varr(arr1), ind1, v1), arr2, Warr(Varr(arr2), ind2, v2))(assn)
+          }
+        }
         case If(cond, th, el) => {
           def condA = boolToAssn(cond)
           def preTh = AImply(condA, preCond(th, assn))
@@ -377,7 +395,7 @@ object VCGen {
         case WhileInv(cond, block, inv) => {
           def invs = (atrue /: inv) { AAnd(_, _) }
           def condA = boolToAssn(cond)
-          def vars = getModifiedIds(block).toList
+          def vars = Helpers.getModifiedIds(block).toList
           def invHold = AForall(vars, AImply(AAnd(invs, condA), preCond(block, invs)))
           def invImply = AForall(vars, AImply(AAnd(invs, ANot(condA)), assn))
           return AAnd(invs, (AAnd(invHold, invImply)))
@@ -387,20 +405,6 @@ object VCGen {
         preCond(x::Nil, preCond(xs, assn))
       }
     }
-
-    // def getAssignedVar(program: Block): List[String] = program match {
-    //   case Nil => Nil
-    //   case (stmt: Statement) :: remain => {
-    //     def vars = stmt match {
-    //       case Assign(x, e) => x::Nil
-    //       case ParAssign(x1, x2, _, _) => x1 :: x2 :: Nil
-    //       case If(_, th, el) => getAssignedVar(th) ++ getAssignedVar(el)
-    //       case WhileInv(_, block, _) => getAssignedVar(block)
-    //       case Write(arr, _, _) => arr :: Nil
-    //     }
-    //     return vars ++ getAssignedVar(remain)
-    //   }
-    // }
 
     /* boolean expression and assertion should be isomorphic */
     def boolToAssn(b: BoolExp): Assertion = b match {
@@ -442,7 +446,7 @@ object VCGen {
       def fformula: List[TypedId] => Assertion => Assertion = {
         xs => if (xs.contains(IntId(x))) assn => assn else substAssn(x, e)
       }
-      return {assn => assnWalk(assn, fcomp, fassn, fformula) }
+      return { assn => assnWalk(assn, fcomp, fassn, fformula) }
     }
 
     /* substitute e1 for x1 and e2 for x2 simultaneously in assertion */
@@ -463,7 +467,7 @@ object VCGen {
           substAssnPar(x1, x2, e1, e2)
         }
       }
-      return {assn => assnWalk(assn, fcomp, fassn, fformula)}
+      return { assn => assnWalk(assn, fcomp, fassn, fformula) }
     }
 
     /* substitute newArr for oldArr in assertion */
@@ -479,7 +483,27 @@ object VCGen {
           substAssnArr(oldArr, newArr)
         }
       }
-      return {assn => assnWalk(assn, fcomp, fassn, fformula) }
+      return { assn => assnWalk(assn, fcomp, fassn, fformula) }
+    }
+
+    def substAssnArrPar(o1: String, n1: Arr, o2: String, n2: Arr): Assertion => Assertion = {
+      def faux = substArithArrPar(o1, n1, o2, n2)
+      def fcomp: Comparison => Comparison = {
+        case (l, op, r) => (faux(l), op, faux(r))
+      }
+      def fassn = substAssnArrPar(o1, n1, o2, n2)
+      def fformula: List[TypedId] => Assertion => Assertion = {
+        xs => if (xs.contains(ArrId(o1)) && xs.contains(ArrId(o2))) {
+          assn => assn
+        } else if (xs.contains(ArrId(o1))) {
+          substAssnArr(o2, n2)
+        } else if (xs.contains(ArrId(o2))) {
+          substAssnArr(o1, n1)
+        } else {
+          substAssnArrPar(o1, n1, o2, n2)
+        }
+      }
+      return { assn => assnWalk(assn, fcomp, fassn, fformula) }
     }
 
     /* helper function walk through the arithExp ADT */
@@ -538,6 +562,14 @@ object VCGen {
       return {aexp => arithWalk(aexp, fn, fvar, fexp, farr) }
     }
 
+    def substArithArrPar(o1: String, n1: Arr, o2: String, n2: Arr): ArithExp => ArithExp = {
+      def fn: Int => Int = n => n
+      def fvar: String => ArithExp = {x => Var(x) }
+      def fexp = substArithArrPar(o1, n1, o2, n2)
+      def farr: Arr => Arr = substArrArrPar(o1, n1, o2, n2)
+      return { aexp => arithWalk(aexp, fn, fvar, fexp, farr) }
+    }
+
     /* substitute e for x in Arr */
     def substArr(x: String, e: ArithExp): Arr => Arr = {
       case Varr(name) => Varr(name)
@@ -571,28 +603,26 @@ object VCGen {
       }
     }
 
-    // def veriCond(program: Block, assn: Assertion): Assertion = program match {
-    //   case Nil => atrue
-    //   case (stmt: Statement) :: Nil => stmt match {
-    //     case Assign(_, _) => atrue
-    //     case ParAssign(_, _, _, _) => atrue
-    //     case Write(_, _, _) => atrue
-    //     case If(cond, th, el) => AAnd(veriCond(th, assn), veriCond(el, assn))
-    //     case WhileInv(cond, body, inv) => {
-    //       def condAssn = boolToAssn(cond)
-    //       def invAssn = (atrue /: inv) { AAnd(_, _) }
-    //       def invPreserve = AImply(AAnd(condAssn, invAssn), preCond(body, invAssn))
-    //       def postHolds = AImply(AAnd(ANot(condAssn), invAssn), assn)
-    //       def innerVeriCond = veriCond(body, invAssn)
-    //       return AAnd(AAnd(invPreserve, postHolds), innerVeriCond)
-    //     }
-    //   }
-    //   case x :: xs => {
-    //     def vcX = veriCond(x::Nil, preCond(xs, assn))
-    //     def vcXS = veriCond(xs, assn)
-    //     return AAnd(vcX, vcXS)
-    //   }
-    // }
+    /*
+     Note: a[i],a[i+1] := a[i+1],a[i] and a[i],b[i] := b[i],a[i] are dealt differently.
+     */
+    def substArrArrPar(o1: String, n1: Arr, o2: String, n2: Arr): Arr => Arr = {
+      case Varr(name) => {
+        if (name == o1) {
+          n1
+        } else if (name == o2) {
+          n2
+        } else {
+          Varr(name)
+        }
+      }
+      case Warr(warr, ind, value) => {
+        def warrs = substArrArrPar(o1, n1, o2, n2)(warr)
+        def inds = substArithArrPar(o1, n1, o2, n2)(ind)
+        def values = substArithArrPar(o1, n1, o2, n2)(value)
+        Warr(warrs, inds, values)
+      }
+    }
 
     def preCondProgram(program: HoareProgram): Assertion = program match {
       case (name, pres, posts, body) => {
@@ -602,45 +632,9 @@ object VCGen {
       }
     }
 
-    // def veriCondProgram(program: HoareProgram): Assertion = program match {
-    //   case (name, pres, posts, body) => {
-    //     def post = (atrue /: posts) { AAnd(_, _) }
-    //     veriCond(body, post)
-    //   }
-    // }
+  }
 
-    def isTrue(assn: Assertion): Boolean = assn match {
-      case ACmp(_) | ANot(_) => false
-      case AAnd(l, r) => isTrue(l) && isTrue(r)
-      case AOr(l, r) => isTrue(l) || isTrue(r)
-      case AParen(a) => isTrue(a)
-      case AImply(pre, post) => isTrue(post)
-      case ATrue() => true
-      case AForall(_, a) => isTrue(a)
-      case AExist(_, a) => isTrue(a)
-    }
-
-    def isApply(assn: Assertion): Boolean = assn match {
-      case AImply(_, _) => true
-      case _ => false
-    }
-
-    def removeTrue(assn: Assertion): Assertion = assn match {
-      case AAnd(l, r) => {
-        if (isTrue(l)) {
-          removeTrue(r)
-        } else if (isTrue(r)) {
-          removeTrue(l)
-        } else {
-          AAnd(removeTrue(l), removeTrue(r))
-        }
-      }
-      case AImply(pre, post) => AImply(removeTrue(pre), removeTrue(post))
-      case AForall(xs, a) => AForall(xs, removeTrue(a))
-      case AExist(xs, a) => AExist(xs, removeTrue(a))
-      case _ => assn
-    }
-
+  object SMTFormat {
     def assnToSMT(assn: Assertion): String = assn match {
       case ACmp(cmp) => cmpToSMT(cmp)
       case ANot(a) => "(" + "not " + assnToSMT(a) + ")"
@@ -684,6 +678,19 @@ object VCGen {
       case Warr(arr, ind, value) => "(store " + arrToSMT(arr) + " " + arithToSMT(ind) + " " + arithToSMT(value) + ")"
     }
 
+    def constDeclare(xs: Set[TypedId]): String = {
+      xs.toList.flatMap({
+        case IntId(x) => "(declare-const " + x + " Int)\n"
+        case ArrId(x) => "(declare-const " + x + " (Array Int Int))\n"
+        case DummyId(x) => {
+          println("dummy type id!: " + x)
+          return ("(declare-const " + x + " Int)\n")
+        }
+      }).mkString
+    }
+  }
+
+  object Helpers {
     def getModifiedIds(program: Block): Set[TypedId] = program match {
       case Nil => Set()
       case stmt :: remain => {
@@ -691,6 +698,7 @@ object VCGen {
           case Assign(x, _) => Set(IntId(x))
           case ParAssign(x1, x2, _, _) => Set(IntId(x1), IntId(x2))
           case Write(x, _, _) => Set(ArrId(x))
+          case ParWrite(x1, _, x2, _, _, _) => Set(ArrId(x1), ArrId(x2))
           case If(_, th, el) => getModifiedIds(th) ++ getModifiedIds(el)
           case WhileInv(_, block, _) => getModifiedIds(block)
           case While(_, block) => getModifiedIds(block)
@@ -729,23 +737,46 @@ object VCGen {
         getIdsArr(arr) ++ getIdsArith(ind) ++ getIdsArith(value)
     }
 
-    def constDeclare(xs: Set[TypedId]): String = {
-      xs.toList.flatMap({
-        case IntId(x) => "(declare-const " + x + " Int)\n"
-        case ArrId(x) => "(declare-const " + x + " (Array Int Int))\n"
-        case DummyId(x) => {
-          println("dummy type id!: " + x)
-          return ("(declare-const " + x + " Int)\n")
-        }
-      }).mkString
+    def isTrue(assn: Assertion): Boolean = assn match {
+      case ACmp(_) | ANot(_) => false
+      case AAnd(l, r) => isTrue(l) && isTrue(r)
+      case AOr(l, r) => isTrue(l) || isTrue(r)
+      case AParen(a) => isTrue(a)
+      case AImply(pre, post) => isTrue(post)
+      case ATrue() => true
+      case AForall(_, a) => isTrue(a)
+      case AExist(_, a) => isTrue(a)
     }
 
-   }
+    def isApply(assn: Assertion): Boolean = assn match {
+      case AImply(_, _) => true
+      case _ => false
+    }
 
+    def removeTrue(assn: Assertion): Assertion = assn match {
+      case AAnd(l, r) => {
+        if (isTrue(l)) {
+          removeTrue(r)
+        } else if (isTrue(r)) {
+          removeTrue(l)
+        } else {
+          AAnd(removeTrue(l), removeTrue(r))
+        }
+      }
+      case AImply(pre, post) => AImply(removeTrue(pre), removeTrue(post))
+      case AForall(xs, a) => AForall(xs, removeTrue(a))
+      case AExist(xs, a) => AExist(xs, removeTrue(a))
+      case _ => assn
+    }
+
+  }
 
   def main(args: Array[String]): Unit = {
     val reader = new FileReader(args(0))
     import ImpParser._;
+    import VCGenerator._;
+    import Helpers._;
+    import SMTFormat._;
     val r = parseAll(prog, reader)
     if (r.successful) {
       val p = r.get
@@ -765,6 +796,6 @@ object VCGen {
     } else {
       println(r)
     }
-//    println(parseAll(prog, reader))
+    //    println(parseAll(prog, reader))
   }
 }

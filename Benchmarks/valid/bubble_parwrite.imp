@@ -15,8 +15,7 @@ is
       inv forall j k, 0 <= j && j < k && bound <= k && k < n ==> a[j] <= a[k]
     do
       if a[i] > a[i+1] then
-        a[i] := a[i+1];
-        a[i+1] := a[i];
+        a[i], a[i+1] := a[i+1], a[i];
       end
       i := i + 1;
     end
