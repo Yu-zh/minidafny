@@ -106,7 +106,6 @@ sub run()
     {
         &info_print(5, "running $test_name ... ");
         `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
-        &info_print(5, "done");
     }
 }
 
