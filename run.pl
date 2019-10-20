@@ -13,6 +13,7 @@ our %BENCH_INFO;
 our %TEST_QUEUE;
 our $INFO_LEVEL = 0;
 
+&init_check();
 &cmd_parse();
 my $compilation_success = &compile();
 if($compilation_success)
@@ -57,10 +58,9 @@ sub init_check()
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
 
-            &info_print(5, "found benchmark file $file, type is $validness");
+            #&info_print(5, "found benchmark file $file, type is $validness");
         }
     }
-    &info_print(0, '') if($INFO_LEVEL == 5);
 }
 
 sub cmd_parse()
@@ -95,7 +95,6 @@ sub cmd_parse()
         }
     }
 
-    &init_check();
     if($need_clean)
     {
         &info_print(5, "cleaning $PROJ_INFO{'RESULT_DIR'} ...");
@@ -103,6 +102,11 @@ sub cmd_parse()
 
         &info_print(5, "cleaning $PROJ_INFO{'OBJ_DIR'} ...");
         `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
+    }
+
+    foreach my $test_name (keys %BENCH_INFO)
+    {
+        &info_print(5, "found benchmark $test_name at location BENCH_INFO{$test_name}{'path'}");
     }
 }
 
