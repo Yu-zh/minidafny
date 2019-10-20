@@ -57,8 +57,8 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
-            say "found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid");
-            &info_print(5, "found benchmark file $file, expected result is ".($validness ? "valid" : "invalid"));
+            say "found benchmark file $file, type is " . ($validness ? "valid" : "invalid");
+            &info_print(5, "found benchmark file $file, type is ".($validness ? "valid" : "invalid"));
         }
     }
     say "\n";
@@ -108,13 +108,14 @@ sub run()
         &info_print(5, "running $test_name ... ");
         `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
     }
+    say "\n";
 }
 
 sub report()
 {
     foreach my $test_name (keys %TEST_QUEUE)
     {
-        &info_print(5, "checking $test_name ... ");
+        &info_print(5, "checking $test_name with validness =  $TEST_QUEUE{$test_name}{'valid'}");
         my $vc_to_test = "$PROJ_INFO{'RESULT_DIR'}/$test_name.vc";
 
         if(-e $vc_to_test)
