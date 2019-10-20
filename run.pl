@@ -57,7 +57,7 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
-            &info_print(5, "found benchmark file $file, type is ".($validness ? "valid" : "invalid"));
+            &info_print(5, ("found benchmark file $file, type is ".$validness ? "valid" : "invalid"));
         }
     }
     &info_print(5,'');
