@@ -58,7 +58,7 @@ sub init_check()
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
             say "found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid");
-            &info_print(5, "found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid"));
+            &info_print(5, "found benchmark file $file, expected result is ".($validness ? "valid" : "invalid"));
         }
     }
     say "\n";
