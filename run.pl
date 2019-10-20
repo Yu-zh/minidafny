@@ -11,6 +11,7 @@ use threads;
 our %PROJ_INFO;
 our %BENCH_INFO;
 our %TEST_QUEUE;
+our $INFO_LEVEL = 0;
 
 &init_check();
 &cmd_parse();
@@ -18,55 +19,14 @@ my $compilation_success = &compile();
 if($compilation_success)
 {
     &run();
+    &report();
 }
 
 ####################################################################################################
 
-# Misc.
+# Main.
 
 ####################################################################################################
-
-sub cmd_parse()
-{
-    foreach my $current_arg (@ARGV)
-    {
-        if($current_arg eq '-clean')
-        {
-            say "[info] cleaning $PROJ_INFO{'RESULT_DIR'} ...";
-            `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
-
-            say "[info] cleaning $PROJ_INFO{'OBJ_DIR'} ...";
-            `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
-        }
-        elsif($current_arg eq '-all')
-        {
-            foreach my $test_name (keys %BENCH_INFO)
-            {
-                $TEST_QUEUE{$test_name}{'path'}   = $BENCH_INFO{$test_name}{'path'};
-                $TEST_QUEUE{$test_name}{'valid'}  = $BENCH_INFO{$test_name}{'valid'};
-                $TEST_QUEUE{$test_name}{'result'} = 'pending';
-            }
-        }
-    }
-}
-sub compile()
-{
-    my @src_filelist = glob "$PROJ_INFO{'SRC_DIR'}/*.scala";
-    foreach my $src_file (@src_filelist)
-    {
-        say "[info] found src file $src_file";
-    }
-    return !(system "scalac -d $PROJ_INFO{'OBJ_DIR'} @src_filelist");
-}
-sub run()
-{
-    foreach my $test_name (keys %TEST_QUEUE)
-    {
-        print "[info] running $test_name ... ";
-        `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
-        print "ok\n";
-    }
-}
 
 sub init_check()
 {
@@ -97,10 +57,95 @@ sub init_check()
             my $validness = !($file =~ 'invalid') ? 1 : 0;
             $BENCH_INFO{$name}{'path'}  = $file;
             $BENCH_INFO{$name}{'valid'} = $validness;
-            say "[info] found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid");
+            &info_print(5, "found benchmark file $file, expected result is " . ($validness ? "valid" : "invalid"));
         }
-    }   
+    }
+    say "\n";
 }
+
+sub cmd_parse()
+{
+    foreach my $current_arg (@ARGV)
+    {
+        if($current_arg eq '-clean')
+        {
+            &info_print(5, "cleaning $PROJ_INFO{'RESULT_DIR'} ...");
+            `rm -irf $PROJ_INFO{'RESULT_DIR'}/*`;
+
+            &info_print(5, "cleaning $PROJ_INFO{'OBJ_DIR'} ...");
+            `rm -irf $PROJ_INFO{'OBJ_DIR'}/*`;
+        }
+        elsif($current_arg =~ /-info=(?<level>\d)/)
+        {
+            $INFO_LEVEL = $+{level};
+        }
+        elsif($current_arg eq '-all')
+        {
+            foreach my $test_name (keys %BENCH_INFO)
+            {
+                $TEST_QUEUE{$test_name}{'path'}   = $BENCH_INFO{$test_name}{'path'};
+                $TEST_QUEUE{$test_name}{'valid'}  = $BENCH_INFO{$test_name}{'valid'};
+            }
+        }
+    }
+}
+
+sub compile()
+{
+    my @src_filelist = glob "$PROJ_INFO{'SRC_DIR'}/*.scala";
+    foreach my $src_file (@src_filelist)
+    {
+        &info_print(5, "found src file $src_file");
+    }
+    say "\n";
+    return !(system "scalac -d $PROJ_INFO{'OBJ_DIR'} @src_filelist");
+}
+sub run()
+{
+    foreach my $test_name (keys %TEST_QUEUE)
+    {
+        &info_print(5, "running $test_name ... ");
+        `scala -cp $PROJ_INFO{'OBJ_DIR'} $PROJ_INFO{'BIN'} $TEST_QUEUE{$test_name}{'path'} > $PROJ_INFO{'RESULT_DIR'}/$test_name.vc`;
+        &info_print(5, "done");
+    }
+}
+
+sub report()
+{
+    foreach my $test_name (keys %TEST_QUEUE)
+    {
+        &info_print(5, "checking $test_name ... ");
+        my $vc_to_test = "$PROJ_INFO{'RESULT_DIR'}/$test_name.vc";
+
+        if(-e $vc_to_test)
+        {
+            my $result = `z3 -smt2 $vc_to_test`;
+            if($result =~ /^unsat$/ && $TEST_QUEUE{$test_name}{'valid'})
+            {
+                &info_print(0, "Verified");
+            }
+            elsif($result =~ /^sat$/ && !($TEST_QUEUE{$test_name}{'valid'}))
+            {
+                &info_print(0, "Not verified");
+            }
+            else
+            {
+                &info_print(1, "Not verified");
+            }
+        }
+        else
+        {
+            &info_print(1, "VC doesn't exist for $test_name");
+        }
+    }
+}
+
+####################################################################################################
+
+# Misc.
+
+####################################################################################################
+
 
 sub get_script_path
 {
@@ -111,7 +156,42 @@ sub get_script_path
 sub mkdir_die
 {
     (my $dirpath) = @_;
-    
+
     mkdir $dirpath if !-e $dirpath;
     die "[error] unable to create dir at $dirpath" if !-e $dirpath;
+}
+
+sub info_print
+{
+    my ($level, $string) = @_;
+    if($level <= $INFO_LEVEL)
+    {
+        my $prefix = '';
+        if($level == 5)
+        {
+            $prefix = '[INFO]';
+        }
+        elsif($level == 4)
+        {
+            $prefix = '[INFO]';
+        }
+        elsif($level == 3)
+        {
+            $prefix = '[WARNING]';
+        }
+        elsif($level == 2)
+        {
+            $prefix = '[CRITICAL]';
+        }
+        elsif($level == 1)
+        {
+            $prefix = '[BUG]';
+        }
+        elsif($level == 0)
+        {
+            $prefix = '';
+        }
+
+        say "$prefix $string";
+    }
 }
