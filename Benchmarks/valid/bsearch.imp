@@ -1,0 +1,30 @@
+program bsearch
+pre (forall i j, 0 <= i && i <= j && j < n ==> a[i] <= a[j]) && n > 0
+post index < 0 ==> forall k, 0 <= k && k < n ==> a[k] != value
+post index >= 0 ==> index < n && a[index] = value
+is
+
+  low := 0;
+  high := n;
+  index := -1;
+  while low < high
+    inv low >= 0 && high >= low && n >= high
+    inv index = -1 || (index >= 0 && index < n)
+    inv index >= 0 && index < n ==> a[index] = value
+    inv index = -1 ==> forall i, (0 <= i && i < n && !(i >= low && i < high)) ==> a[i] != value
+  do
+    mid := (low + high) / 2;
+    if a[mid] < value then
+      low := mid + 1;
+    else
+      if value < a[mid] then
+        high := mid;
+      else
+        index := mid;
+        low := high;
+      end
+    end
+  end
+
+end
+      
