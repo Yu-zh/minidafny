@@ -131,6 +131,7 @@ sub report()
             }
             else
             {
+                &info_print(5, "result = $result");
                 &info_print(1, "Not verified");
             }
         }
