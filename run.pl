@@ -121,11 +121,11 @@ sub report()
         if(-e $vc_to_test)
         {
             my $result = `z3 -smt2 $vc_to_test`;
-            if($result =~ /unsat$/ && $TEST_QUEUE{$test_name}{'valid'})
+            if($result =~ /^unsat/ && $TEST_QUEUE{$test_name}{'valid'})
             {
                 &info_print(0, "Verified");
             }
-            elsif($result =~ /sat$/ && !($TEST_QUEUE{$test_name}{'valid'}))
+            elsif($result =~ /^sat/ && !($TEST_QUEUE{$test_name}{'valid'}))
             {
                 &info_print(0, "Not verified");
             }
