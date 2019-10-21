@@ -1,0 +1,18 @@
+program arrswap
+pre n > 0
+post forall i, 0 <= i && i < n ==> a[i] <= b[i]
+is
+
+  a := 0;
+  while a < n
+    inv a <= n
+    inv forall i, 0 <= i && i < a ==> a[i] <= b[i]
+  do
+    if a[i] > b[i] then
+      b := a[i];
+      a[i] := b[i];
+      b[i] := b;
+    end
+  end
+
+end

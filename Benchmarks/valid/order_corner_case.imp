@@ -1,0 +1,18 @@
+program order
+  post x <= y
+is
+  while !y = y || x < x
+  do
+    if x > y || !((!x > x) && x < y) then
+    else
+    end
+  end
+  if x > y then
+    x, y := y, x;
+  else
+    x, y := x, y;
+  end
+  while x != x
+  do
+  end
+end

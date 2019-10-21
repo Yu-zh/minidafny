@@ -1,0 +1,29 @@
+program bubble
+pre n > 0
+post forall i j, 0 <= i ==> i <= j ==> j < n ==> a[i] <= a[j]
+is
+
+  l := n;
+  while l > 1
+    inv forall k, k >= l && k < n ==> forall j, j >= 0 && j < k ==> a[j] <= a[k]
+    inv l <= n
+  do
+    i := 1;
+    next := 0;
+    while i <= l - 1 
+      inv i <= n && i >= 1
+      inv forall k, next <= k && k < i ==> forall j, 0 <= j && j < k ==> a[j] <= a[k]
+      inv forall j, 0 <= j && j < i - 1 ==> a[j] <= a[i-1]
+      inv forall k, l <= k && k < n ==> forall j, 0 <= j && j < k ==> a[j] <= a[k]
+      inv next <= l - 1 
+    do
+      if a[i-1] > a[i] then
+        a[i-1], a[i] := a[i], a[i-1];
+	next := i;
+      end
+      i := i + 1;
+    end
+    l := next;
+  end
+
+end
