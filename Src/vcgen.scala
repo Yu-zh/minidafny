@@ -107,7 +107,7 @@ object VCGen {
 
     /* Parsing for BoolExp. */
     def batom : Parser[BoolExp] =
-      "(" ~> bexp <~ ")" | comp ^^ { BCmp(_) } | "!" ~> batom ^^ { BNot(_) } // last batom should be bexp
+      "(" ~> bexp <~ ")" | comp ^^ { BCmp(_) } | "!" ~> batom ^^ { BNot(_) } // last batom should be bexp... not true, I was stupid
     def bconj : Parser[BoolExp] =
       batom ~ rep("&&" ~> batom) ^^ {
         case left ~ list => (left /: list) { BConj(_, _) }
@@ -140,7 +140,7 @@ object VCGen {
         case c ~ t => If(c, t, Nil)
       } |
       ("while" ~> (bexp /* ~ rep("inv" ~ assn) */) <~ "do") ~ (block <~ "end") ^^ {
-        case c ~ b => While(c, b)
+        case c ~ b => WhileInv(c, b, Nil)
       } |
       ("while" ~> (bexp ~ rep("inv" ~> assn)) <~ "do") ~ (block <~ "end") ^^ {
         case c ~ assns ~ b => WhileInv(c, b, assns)
@@ -149,7 +149,7 @@ object VCGen {
     /* Parsing for Assertion. */
 
     def aatom : Parser[Assertion] =
-      "(" ~> assn <~ ")" ^^ { AParen(_) } | comp ^^ { ACmp(_) } | "!" ~> assn ^^ { ANot(_) } | aformular
+      "(" ~> assn <~ ")" ^^ { AParen(_) } | comp ^^ { ACmp(_) } | "!" ~> aatom ^^ { ANot(_) } | aformular
 
     def aformular : Parser[Assertion] =
       ("forall" ~> rep(pvar)) ~ ("," ~> assn) ^^ {
@@ -641,12 +641,28 @@ object VCGen {
       case AAnd(left, right) => "(and " + assnToSMT(left) + " " + assnToSMT(right) + ")"
       case AOr(left, right) => "(or " + assnToSMT(left) + " " + assnToSMT(right) + ")"
       case AImply(pre, post) => "(=> " + assnToSMT(pre) + " " + assnToSMT(post) + ")"
-      case AForall(xs, a) => "(forall (" + xs.flatMap({
-        case IntId(x) => "(" + x + " Int) "
-        case ArrId(x) => "(" + x + " (Array Int Int)) "
-        case DummyId(x) => "(" + x + " (Array Int Int))"
-      }).mkString + ") " + assnToSMT(a) + ")"
-      case AExist(xs, a) => "(exists (" + xs.flatMap("(" + _ + " Int) ").mkString + ") " + assnToSMT(a) + ")"
+      case AForall(xs, a) => {
+        if (xs.isEmpty) {
+          assnToSMT(a)
+        } else {
+          "(forall (" + xs.flatMap({
+            case IntId(x) => "(" + x + " Int) "
+            case ArrId(x) => "(" + x + " (Array Int Int)) "
+            case DummyId(x) => "(" + x + " (Array Int Int))"
+          }).mkString + ") " + assnToSMT(a) + ")"
+        }
+      }
+      case AExist(xs, a) => {
+        if (xs.isEmpty) {
+          assnToSMT(a)
+        } else {
+          "(exists (" + xs.flatMap({
+            case IntId(x) => "(" + x + " Int) "
+            case ArrId(x) => "(" + x + " (Array Int Int)) "
+            case DummyId(x) => "(" + x + " (Array Int Int))"
+          }).mkString + ") " + assnToSMT(a) + ")"
+        }
+      }
       case AParen(a) => assnToSMT(a)
       case ATrue() => "true" // should not be called
     }

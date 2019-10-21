@@ -1,0 +1,21 @@
+program revrev
+  pre 0 < n
+  post forall i, 0 <= i && i <= n ==> a[i] = c[i]
+is
+  i := 0;
+  while i <= n
+    inv i <= n+1
+    inv forall j, 0 <= j && j < i ==> b[j] = a[n-j]
+  do
+    b[i] := a[n-i];
+    i := i + 1;
+  end
+  i := 0;
+  while i <= n
+    inv i <= n+1
+    inv forall j, 0 <= j && j < i ==> c[j] = b[n-j]
+  do
+    c[i] := b[n-i];
+    i := i + 1;
+  end
+end
