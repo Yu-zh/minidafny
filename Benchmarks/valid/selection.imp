@@ -1,0 +1,29 @@
+program selectionsort
+pre n > 0
+post forall i j, 0 <= i && i < j && j < n ==> a[i] <= a[j]
+is
+  i := 0;
+  min := 0;
+  while i < n-1
+    inv i >=0 && i < n
+    inv forall j k, 0 <= j && j < i && i <= k && k < n ==> a[j] <= a[k]
+    inv forall j k, 0 <= j && j < k && k <= i ==> a[j] <= a[k]
+  do
+    j := i+1;
+    min := i;
+    while j < n
+      inv i < j && j <= n
+      inv i <= min && min < n
+      inv forall k, i <= k && k < j ==> a[k] >= a[min]
+    do
+      if (a[j] < a[min]) then
+        min := j;
+      end
+      j := j+1;
+    end
+    if (min != i) then
+      a[i], a[min] := a[min], a[i];
+    end
+    i := i+1;
+  end
+end
