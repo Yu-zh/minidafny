@@ -153,6 +153,10 @@ sub report()
             {
                 &info_print(0, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
             }
+            elsif($result =~ /^unknown/)
+            {
+                &info_print(0, ("Unknown".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));
+            }
             else
             {
                 &info_print(1, ("Not verified".((scalar keys %TEST_QUEUE > 1) ? " for $test_name" : "")));

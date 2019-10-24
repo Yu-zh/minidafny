@@ -1,0 +1,20 @@
+program gcd
+    pre x > 0 && y > 0
+    post d > 0
+    post x % d = 0
+    post y % d = 0
+is
+    if x < y then
+        a, b := y, x;
+    else
+        a, b := x, y;
+    end
+    while b != 0
+        inv a > 0
+	inv b >= 0
+	inv a >= b
+	inv forall i, a % i = 0 && b % i = 0 ==> x % i = 0 && y % i = 0
+    do
+        a, b := b, a % b;
+    end
+end
