@@ -13,6 +13,9 @@ Example：
 
 `-all` indicates running all the benchmarks under the Benchmarks director. The script will enumerate them and run them one by one.
 
+`./run.pl -info=5 -all`
+`info=5` indicates printing all the compilation, execution and debug information.
+
 Running the perl script will re-compile the scala source file every time. In case you have compiled it and do not want to waste time waiting compiling, you can run the bytecode directly:
 
 `scala -cp _Objs VCGen path/to/imp/file`
@@ -37,6 +40,10 @@ We supplied new benchmarks and they can be found in the directory `Benchmark/val
 * `partition.imp`: Array Partition. Parallel array write is used.
 * `rev_rev.imp`: Reverse an array twice.
 * `selection.imp`: Selection sort.
+
+All the benchmarks above can be verified. There is one more interesting benchmark in the directory `Benchmark/valid`
+
+* `gcd_euclidean.imp`: An euclidean algorithm implementation for GCD problem. I believe the program is valid but z3 cannot figure it out. So it will run for a long while and return `unknown`. Thus, the output of our verifies for this test case is `Not Verified`.
 
 # Implementation of VCG
 * Object `ImpParser`: A parser that parses the program with its pre- and post-conditions.
