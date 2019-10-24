@@ -44,7 +44,7 @@ We supplied new benchmarks and they can be found in the directory `Benchmark/val
 
 All the benchmarks above can be verified. There is one more interesting benchmark in the directory `Benchmark/valid`
 
-* `gcd_euclidean.imp`: An euclidean algorithm implementation for GCD problem. I believe the program is valid. However, z3 cannot figure it out because of its insuffient support for modular linear arithmetic. So it will run for a long while and return `unknown`. Thus, the output of our verifies for this test case is `Unknown`.
+* `gcd_euclidean.imp`: An euclidean algorithm implementation for GCD problem. I believe the program is valid. However, z3 cannot figure it out because of its insuffient support for modular linear arithmetic. So it will run for a long while and return `unknown`. Thus, the output of our verifier for this test case is `Unknown`.
 
 # Implementation of VCG
 * Object `ImpParser`: A parser that parses the program with its pre- and post-conditions.
