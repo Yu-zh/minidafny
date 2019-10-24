@@ -19,9 +19,7 @@ Running the perl script will re-compile the scala source file every time. In cas
 
 # Collaborators
 
-Yu Zhang
-
-Bowen Huang
+Yu Zhang and Bowen Huang
 
 # Benchmarks
 
