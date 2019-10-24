@@ -217,158 +217,6 @@ object VCGen {
       ("program" ~> pvar) ~ rep("pre" ~> assn) ~ rep("post" ~> assn) ~ ("is" ~> block <~ "end") ^^ { case x ~ pres ~ posts ~ b => (x, pres, posts, b) }
   }
 
-  object PrettyPrinter {
-
-    /* pretty-print a program */
-    def progPrint(prog: HoareProgram): Unit = prog match {
-      case (x, pres, posts, b) => {
-        println(x)
-        for (pre <- pres) {
-          print("pre: ")
-          assnPrint(pre)
-          println()
-        }
-        for (post <- posts) {
-          print("post: ")
-          assnPrint(post)
-          println()
-        }
-        println(b)
-      }
-    }
-
-    /* pretty-print an assertion */
-    /* basically, if the sub-exp has lower precedence, print a pair of parens */
-    def assnPrint(assn: Assertion): Unit = assn match {
-      case ACmp(cmp) => compPrint(cmp)
-      case ANot(a) => {
-        print("!")
-        assnPrint(a)
-      }
-      case AAnd(left, right) => {
-        if (Helpers.isApply(left)) {
-          print("(")
-          assnPrint(left)
-          print(")")
-        } else {
-          assnPrint(left)
-        }
-        print(" && ")
-        if (Helpers.isApply(right)) {
-          print("(")
-          assnPrint(right)
-          print(")")
-        } else {
-          assnPrint(right)
-        }
-      }
-      case AOr(left, right) => {
-        assnPrint(left)
-        print(" || ")
-        assnPrint(right)
-      }
-      case AImply(pre, post) => {
-        assnPrint(pre)
-        print(" ==> ")
-        assnPrint(post)
-      }
-      case AForall(xs, a) => {
-        println()
-        print("forall ")
-        for (x <- xs) {
-          print(x)
-          print(" ")
-        }
-        print(", ")
-        assnPrint(a)
-        println()
-      }
-      case AExist(xs, a) => {
-        println()
-        print("exists ")
-        for (x <- xs) {
-          print(x)
-          print(" ")
-        }
-        print(", ")
-        assnPrint(a)
-        println()
-      }
-      case AParen(a) => {
-        print("(")
-        assnPrint(a)
-        print(")")
-      }
-      case ATrue() => {
-        print("True")
-      }
-    }
-
-    /* pretty-print a comparison */
-    def compPrint(cmp: Comparison): Unit = cmp match {
-      case (left, op, right) => {
-        arithPrint(left)
-        print(op)
-        arithPrint(right)
-      }
-    }
-
-    /* pretty-print a arith */
-    def arithPrint(aexp: ArithExp): Unit = aexp match {
-      case Num(n) => print(n)
-      case Var(x) => print(x)
-      case Add(l, r) => {
-        arithPrint(l)
-        print("+")
-        arithPrint(r)
-      }
-      case Sub(l, r) => {
-        arithPrint(l)
-        print("-")
-        arithPrint(r)
-      }
-      case Mul(l, r) => {
-        arithPrint(l)
-        print("*")
-        arithPrint(r)
-      }
-      case Div(l, r) => {
-        arithPrint(l)
-        print("/")
-        arithPrint(r)
-      }
-      case Mod(l, r) => {
-        arithPrint(l)
-        print("%")
-        arithPrint(r)
-      }
-      case Parens(a) => {
-        print("(")
-        arithPrint(a)
-        print(")")
-      }
-      case Read(arr, ind) => {
-        arrPrint(arr)
-        print("[")
-        arithPrint(ind)
-        print("]")
-      }
-    }
-
-    /* pretty-print an arry */
-    def arrPrint(arr: Arr): Unit = arr match {
-      case Varr(name) => print(name)
-      case Warr(arr, ind, value) => {
-        arrPrint(arr)
-        print("[")
-        arithPrint(ind)
-        print("->")
-        arithPrint(value)
-        print("]")
-      }
-    }
-  }
-
   def atrue: Assertion = ATrue()
 
   object VCGenerator {
@@ -699,7 +547,7 @@ object VCGen {
         case IntId(x) => "(declare-const " + x + " Int)\n"
         case ArrId(x) => "(declare-const " + x + " (Array Int Int))\n"
         case DummyId(x) => {
-          println("dummy type id!: " + x)
+//          println("dummy type id!: " + x)
           return ("(declare-const " + x + " Int)\n")
         }
       }).mkString
@@ -814,4 +662,157 @@ object VCGen {
     }
     //    println(parseAll(prog, reader))
   }
+
+  object PrettyPrinter {
+
+    /* pretty-print a program */
+    def progPrint(prog: HoareProgram): Unit = prog match {
+      case (x, pres, posts, b) => {
+        println(x)
+        for (pre <- pres) {
+          print("pre: ")
+          assnPrint(pre)
+          println()
+        }
+        for (post <- posts) {
+          print("post: ")
+          assnPrint(post)
+          println()
+        }
+        println(b)
+      }
+    }
+
+    /* pretty-print an assertion */
+    /* basically, if the sub-exp has lower precedence, print a pair of parens */
+    def assnPrint(assn: Assertion): Unit = assn match {
+      case ACmp(cmp) => compPrint(cmp)
+      case ANot(a) => {
+        print("!")
+        assnPrint(a)
+      }
+      case AAnd(left, right) => {
+        if (Helpers.isApply(left)) {
+          print("(")
+          assnPrint(left)
+          print(")")
+        } else {
+          assnPrint(left)
+        }
+        print(" && ")
+        if (Helpers.isApply(right)) {
+          print("(")
+          assnPrint(right)
+          print(")")
+        } else {
+          assnPrint(right)
+        }
+      }
+      case AOr(left, right) => {
+        assnPrint(left)
+        print(" || ")
+        assnPrint(right)
+      }
+      case AImply(pre, post) => {
+        assnPrint(pre)
+        print(" ==> ")
+        assnPrint(post)
+      }
+      case AForall(xs, a) => {
+        println()
+        print("forall ")
+        for (x <- xs) {
+          print(x)
+          print(" ")
+        }
+        print(", ")
+        assnPrint(a)
+        println()
+      }
+      case AExist(xs, a) => {
+        println()
+        print("exists ")
+        for (x <- xs) {
+          print(x)
+          print(" ")
+        }
+        print(", ")
+        assnPrint(a)
+        println()
+      }
+      case AParen(a) => {
+        print("(")
+        assnPrint(a)
+        print(")")
+      }
+      case ATrue() => {
+        print("True")
+      }
+    }
+
+    /* pretty-print a comparison */
+    def compPrint(cmp: Comparison): Unit = cmp match {
+      case (left, op, right) => {
+        arithPrint(left)
+        print(op)
+        arithPrint(right)
+      }
+    }
+
+    /* pretty-print a arith */
+    def arithPrint(aexp: ArithExp): Unit = aexp match {
+      case Num(n) => print(n)
+      case Var(x) => print(x)
+      case Add(l, r) => {
+        arithPrint(l)
+        print("+")
+        arithPrint(r)
+      }
+      case Sub(l, r) => {
+        arithPrint(l)
+        print("-")
+        arithPrint(r)
+      }
+      case Mul(l, r) => {
+        arithPrint(l)
+        print("*")
+        arithPrint(r)
+      }
+      case Div(l, r) => {
+        arithPrint(l)
+        print("/")
+        arithPrint(r)
+      }
+      case Mod(l, r) => {
+        arithPrint(l)
+        print("%")
+        arithPrint(r)
+      }
+      case Parens(a) => {
+        print("(")
+        arithPrint(a)
+        print(")")
+      }
+      case Read(arr, ind) => {
+        arrPrint(arr)
+        print("[")
+        arithPrint(ind)
+        print("]")
+      }
+    }
+
+    /* pretty-print an arry */
+    def arrPrint(arr: Arr): Unit = arr match {
+      case Varr(name) => print(name)
+      case Warr(arr, ind, value) => {
+        arrPrint(arr)
+        print("[")
+        arithPrint(ind)
+        print("->")
+        arithPrint(value)
+        print("]")
+      }
+    }
+  }
+
 }
