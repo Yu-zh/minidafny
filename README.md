@@ -14,6 +14,7 @@ Example：
 `-all` indicates running all the benchmarks under the Benchmarks director. The script will enumerate them and run them one by one.
 
 `./run.pl -info=5 -all`
+
 `info=5` indicates printing all the compilation, execution and debug information.
 
 Running the perl script will re-compile the scala source file every time. In case you have compiled it and do not want to waste time waiting compiling, you can run the bytecode directly:
