@@ -1,0 +1,16 @@
+program max
+pre n > 0
+post !exists i, 0 <= i && i < n && max < a[i]
+is
+  i := 1;
+  max := a[0];
+  while i < n
+    inv 0 <= i && i <= n
+    inv forall k, 0 <= k && k < i ==> a[k] <= max
+  do
+    if a[i] > max then
+      max := a[i];
+    end
+    i := i+1;
+  end
+end

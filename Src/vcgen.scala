@@ -177,7 +177,7 @@ object VCGen {
             a
           } else {
             def idsAssn = Helpers.getIdsAssn(a)
-            def idsForall = xs.map({
+            def idsExists = xs.map({
               id => if (idsAssn.contains(IntId(id))) {
                 IntId(id)
               } else if (idsAssn.contains(ArrId(id))) {
@@ -186,7 +186,7 @@ object VCGen {
                 DummyId(id)
               }
             })
-            AForall(idsForall, a)
+            AExist(idsExists, a)
           }
         }
       }
